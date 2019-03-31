@@ -1,0 +1,67 @@
+#!/usr/bin/swift sh
+
+import Foundation
+import Darwin
+
+import SwiftCLI // @jakeheis ~> 5.2.2
+import ShellOut // @JohnSundell ~> 2.2.0
+
+let imageName = "rmud/rmud:19.03.2"
+
+struct StandardErrorOutputStream: TextOutputStream {
+    let stderr = FileHandle.standardError
+
+    func write(_ string: String) {
+        guard let data = string.data(using: .utf8) else {
+            return // encoding failure
+        }
+        stderr.write(data)
+    }
+}
+var errorStream = StandardErrorOutputStream()
+
+extension String: Error {}
+extension String: LocalizedError {
+    public var errorDescription: String? { return self }
+}
+
+class RunCommand: Command {
+    let name = "run"
+
+    let image = Key<String>("-i", "--image", description: "Image name (for example: rmud/rmud:19.03.2")
+
+    func execute() throws {
+        let currentDir = FileManager.default.currentDirectoryPath 
+
+        guard let image = image.value else {
+            throw "Please specify image name (--image=rmud/rmud:...)"
+        }
+
+        print("Starting \(image)")
+        let output = try shellOut(to: "docker", arguments: [
+            "run",
+            "-v", "\"\(currentDir)/../rmud-data\":/rmud-data",
+            "-v", "\"\(currentDir)/../rmud-live\":/rmud-live",
+            "-p", "3040:3040",
+            "-p", "4040:4040",
+            "--rm",
+            "\(image)",
+            "./rmud"
+        ])
+        print(output)
+        print("Stopped: \(image)")
+    }
+}
+
+let rr = CLI(name: "rr")
+rr.commands = [RunCommand()]
+do {
+    try rr.go()
+} catch let error as ShellOutError {
+    print(error.message, to: &errorStream)
+    exit(EXIT_FAILURE)
+} catch let error as String {
+    print(error, to: &errorStream)
+    exit(EXIT_FAILURE)
+}
+
