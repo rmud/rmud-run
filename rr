@@ -1,67 +1,69 @@
-#!/usr/bin/swift sh
+#!/bin/bash
 
-import Foundation
-import Darwin
 
-import SwiftCLI // @jakeheis ~> 5.2.2
-import ShellOut // @JohnSundell ~> 2.2.0
 
-let imageName = "rmud/rmud:19.03.2"
+function usage ()
+{
+  local usage="
+Usage: $(basename $0) [COMMAND] [OPTIONS]
 
-struct StandardErrorOutputStream: TextOutputStream {
-    let stderr = FileHandle.standardError
+Commands:
+  run                          Run rmud
 
-    func write(_ string: String) {
-        guard let data = string.data(using: .utf8) else {
-            return // encoding failure
-        }
-        stderr.write(data)
-    }
-}
-var errorStream = StandardErrorOutputStream()
-
-extension String: Error {}
-extension String: LocalizedError {
-    public var errorDescription: String? { return self }
+Options:
+  -i, --image <name>           Image name (for example: rmud/rmud:19.03.2
+"
+    echo "$usage"
 }
 
-class RunCommand: Command {
-    let name = "run"
+function run ()
+{
+    [[ -z "$IMAGE" ]] && { echo "Please specify image name (--image rmud/rmud:...)"; exit 1; }
 
-    let image = Key<String>("-i", "--image", description: "Image name (for example: rmud/rmud:19.03.2")
-
-    func execute() throws {
-        let currentDir = FileManager.default.currentDirectoryPath 
-
-        guard let image = image.value else {
-            throw "Please specify image name (--image=rmud/rmud:...)"
-        }
-
-        print("Starting \(image)")
-        let output = try shellOut(to: "docker", arguments: [
-            "run",
-            "-v", "\"\(currentDir)/../rmud-data\":/rmud-data",
-            "-v", "\"\(currentDir)/../rmud-live\":/rmud-live",
-            "-p", "3040:3040",
-            "-p", "4040:4040",
-            "--rm",
-            "\(image)",
-            "./rmud"
-        ])
-        print(output)
-        print("Stopped: \(image)")
-    }
+    echo "Starting: $IMAGE"
+    docker run \
+        -v "$(pwd)/../rmud-data":/rmud-data \
+        -v "$(pwd)/../rmud-live":/rmud-live \
+        -p 3040:3040 \
+        -p 4040:4040 \
+        --rm \
+        "$IMAGE" \
+        ./rmud
+    echo "Stopped: $IMAGE"
 }
 
-let rr = CLI(name: "rr")
-rr.commands = [RunCommand()]
-do {
-    try rr.go()
-} catch let error as ShellOutError {
-    print(error.message, to: &errorStream)
-    exit(EXIT_FAILURE)
-} catch let error as String {
-    print(error, to: &errorStream)
-    exit(EXIT_FAILURE)
-}
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case $key in
+        -i|--image)
+            IMAGE="$2"
+            shift 2
+            ;;
+        *)
+            POSITIONAL+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ $# -ne 1 ]
+then
+    usage
+    exit 1
+fi
+
+command="$1"
+
+case $command in
+    run)
+        run
+        ;;
+    *)
+        echo "Invalid command: $command"
+        exit 1
+esac
 
