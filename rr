@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 function usage ()
 {
   local usage="
@@ -18,7 +16,8 @@ Options:
 
 function run ()
 {
-    [[ -z "$IMAGE" ]] && { echo "Please specify image name (--image rmud/rmud:...)"; exit 1; }
+    #[[ -z "$IMAGE" ]] && { echo "Please specify image name (--image rmud/rmud:...)"; exit 1; }
+    [[ -z "$IMAGE" ]] && IMAGE="rmud/rmud:latest"
 
     echo "Starting: $IMAGE"
     docker run \
