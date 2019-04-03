@@ -7,9 +7,10 @@ Usage: $(basename $0) [COMMAND] [OPTIONS]
 
 Commands:
   run                          Run rmud
+  versions                     Print available versions
 
 Options:
-  -i, --image <name>           Image name (for example: rmud/rmud:19.03.2
+  -i, --image <name>           Image name (for example: rmud/rmud:19.03.2)
 "
     echo "$usage"
 }
@@ -29,6 +30,12 @@ function run ()
         "$IMAGE" \
         ./rmud
     echo "Stopped: $IMAGE"
+}
+
+function versions ()
+{
+    source docker-tags
+    docker-tags rmud/rmud | jq '.["tags"]'
 }
 
 POSITIONAL=()
@@ -60,6 +67,9 @@ command="$1"
 case $command in
     run)
         run
+        ;;
+    versions)
+        versions
         ;;
     *)
         echo "Invalid command: $command"
