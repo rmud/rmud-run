@@ -48,8 +48,7 @@ List of versions:
 ### Using websockets client:
 
 ```
-git clone git@github.com/rmud/rmud.git
-cd rmud/rmud/WebsocketsClient
+git clone git@github.com/rmud/rmud-web-client.git
 ```
 
 Open play.html
