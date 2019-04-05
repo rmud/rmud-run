@@ -3,14 +3,17 @@
 function usage ()
 {
   local usage="
-Usage: $(basename $0) [COMMAND] [OPTIONS]
+Usage: $(basename $0) [OPTIONS] [COMMAND] [COMMAND OPTIONS]
 
 Commands:
-  run                          Run rmud
+  run                          Run rmud. Pass rmud options after 'run'
   versions                     Print available versions
 
 Options:
-  -i, --image <name>           Image name (for example: rmud/rmud:19.03.2)
+  -i, --image <name>           Image name (for example: rmud/rmud:19.03.4)
+ 
+For example:
+  $(basename $0) -i rmud/rmud:19.03.4 run -h
 "
     echo "$usage"
 }
@@ -28,7 +31,8 @@ function run ()
         -p 4040:4040 \
         --rm \
         "$IMAGE" \
-        ./rmud
+        ./rmud \
+        "${POSITIONAL[@]:1}"
     echo "Stopped: $IMAGE"
 }
 
@@ -41,22 +45,26 @@ function versions ()
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
-    key="$1"
-
-    case $key in
-        -i|--image)
-            IMAGE="$2"
-            shift 2
-            ;;
-        *)
-            POSITIONAL+=("$1")
-            shift
-            ;;
-    esac
+    if [ ${#POSITIONAL[@]} -eq 0 ]; then
+        key="$1"
+        case $key in
+            -i|--image)
+                IMAGE="$2"
+                shift 2
+                ;;
+            *)
+                POSITIONAL+=("$1")
+                shift
+                ;;
+        esac
+    else
+        POSITIONAL+=("$1")
+        shift
+    fi
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-if [ $# -ne 1 ]
+if [ $# -lt 1 ]
 then
     usage
     exit 1
