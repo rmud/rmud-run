@@ -13,7 +13,9 @@
 ```
 git clone git@github.com/rmud/rmud-run.git
 git clone git@github.com/rmud/rmud-data.git
+
 mkdir rmud-live
+echo "0" > rmud-live/lastgamepulse
 ```
 
 Run the latest version of the game:
@@ -23,7 +25,13 @@ cd rmud-run
 ./rr run
 ```
 
-Or, to run a specific version:
+If the game complains about players absence, run:
+
+```
+./rr run --pwipe
+```
+
+To run a specific version of the game:
 
 ```
 ./rr run -i rmud/rmud:19.04.4
